@@ -1,8 +1,6 @@
 //
 // Licensed under the Apache
-//
-
-
+// by Takashi Futada
 
 using System;
 using System.Text.RegularExpressions;
@@ -10,7 +8,6 @@ using System.Collections.Generic;
 
 public class Test
 {
-
     public static void Main()
     {
         var stories = new List<string>(){
