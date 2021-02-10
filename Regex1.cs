@@ -5,6 +5,8 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 public class Test
 {
@@ -23,14 +25,25 @@ public class Test
 
         var st = new SystemTrader();
 
+        var tm = new Stopwatch();
+        tm.Start();
+
         foreach (string story in stories)
         {
             st.ParseTweet(story);
         }
-
-        // Async/wait
+        tm.Stop(); Console.WriteLine("Sequential: {0}", tm.Elapsed);
 
         // Parallel
+        tm.Reset(); tm.Start();
+
+        var po = new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount };
+        Parallel.ForEach(stories, po, story =>
+        {
+            st.ParseTweet(story);
+        });
+        tm.Stop(); Console.WriteLine("Parallel: {0}", tm.Elapsed);
+
     }
 
 
