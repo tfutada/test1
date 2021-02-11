@@ -51,31 +51,31 @@ public class Test
         catch { }
 
         Console.WriteLine("c: {0}", tm.Elapsed);
-
-
-        // // Parallel
-        // tm.Reset(); tm.Start();
-
-        // var po = new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount };
-        // Parallel.ForEach(stories, po, story =>
-        // {
-        //     st.ParseTweet(story);
-        // });
-        // tm.Stop(); Console.WriteLine("Parallel: {0}", tm.Elapsed);
-
     }
     // study how to use Regex to parse date, digit and currency
     private class SystemTrader
     {
-        private static Regex currency1 = new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled);
-        private static Regex currency2 = new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled);
+        private List<Regex> regexes;
+        private static ParallelOptions po = new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+        public SystemTrader()
+        {
+            regexes = new List<Regex>(){
+                new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled),
+                new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled)
+            };
+        }
         public void ParseTweet(String tweet)
         {
-            Match mt = currency2.Match(tweet);
-            if (mt.Success)
+
+            Parallel.ForEach(regexes, po, re =>
             {
-                Console.WriteLine("Currency: {0}", mt.Groups[0].Value);
-            }
+                Match mt = re.Match(tweet);
+                if (mt.Success)
+                {
+                    Console.WriteLine("Currency: {0}", mt.Groups[0].Value);
+                }
+            });
         }
     }
 }
