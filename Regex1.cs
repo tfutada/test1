@@ -59,26 +59,27 @@ public class Test
     // study how to use Regex to parse date, digit and currency
     private class SystemTrader : IParse
     {
-        private List<Regex> regexes;
+        private List<(string, Regex)> regexes;
         private static ParallelOptions po = new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
         public SystemTrader()
         {
-            regexes = new List<Regex>(){
-                new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled),
-                new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled),
-                new Regex(@"(昭和|平成|令和)\d*年?\d*月?\d*日?", RegexOptions.Compiled),
+            regexes = new List<(string, Regex)>(){
+                ("Currency with 円", new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled)),
+                ("Currency with ¥", new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled)),
+                ("Date with 元号", new Regex(@"(昭和|平成|令和)\d*年?\d*月?\d*日?", RegexOptions.Compiled)),
                 // new Regex(@"(\d+年\d+月\d+日|\d+年\d+月|\d+年)", RegexOptions.Compiled),
             };
         }
-        public void ParseTweet(String tweet)
+        public void ParseTweet(string tweet)
         {
-            Parallel.ForEach(regexes, po, re =>
+            Parallel.ForEach(regexes, po, regex =>
             {
+                (string pattern, Regex re) = regex;
                 MatchCollection matches = re.Matches(tweet);
                 foreach (Match m in matches)
                 {
-                    Console.WriteLine("matched: {0}", m.Value);
+                    Console.WriteLine("{0}: {1}", pattern, m.Value);
                 }
             });
         }
