@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Globalization;
 
+#nullable enable
+
 public class Test
 {
     public interface IParse
@@ -29,7 +31,7 @@ public class Test
 
         var tm = new Stopwatch();
         tm.Start();
-        IParse st = new SystemTrader("ja-JP");
+        IParse st = new SystemTrader(locale: "ja-JP");
         var tasks = new List<Task>();
 
         // parse each story in parallel
@@ -39,7 +41,7 @@ public class Test
 
             tasks.Add(Task.Run(() =>
             {
-                st.ParseTweet(story); // spawn a heavy job
+                st.ParseTweet(tweet: story); // spawn a heavy job
             })); // like go func but thread
         }
 
@@ -94,7 +96,8 @@ public class Test
                 {
                     if (code == 3)
                     {
-                        Console.WriteLine("{0}: {1}", pattern, ToDate(m.Value));
+                        string? ret = ToDate(japaneseDate: m.Value);
+                        Console.WriteLine("{0}: {1}", pattern, ret ?? "parse error");
                     }
                     else
                     {
@@ -106,7 +109,7 @@ public class Test
 
         // Convert the Japanese(Wareki) calendar to the Western calendar.
         // gg represents a Wareki such as 令和
-        private string ToDate(string japaneseDate)
+        private string? ToDate(string japaneseDate)
         {
             if (DateTime.TryParseExact(japaneseDate, "ggyy年M月d日", culture, DateTimeStyles.AssumeLocal, out DateTime result))
             {
