@@ -17,13 +17,6 @@ public class Test
     }
     public static void Main()
     {
-        var culture = new System.Globalization.CultureInfo("ja-JP", true);
-        culture.DateTimeFormat.Calendar = new JapaneseCalendar();
-
-        string target = "令和3年2月12日";
-        DateTime.TryParseExact(target, "ggyy年M月d日", culture, DateTimeStyles.AssumeLocal, out DateTime result);
-        Console.WriteLine(result.ToLongDateString());
-
         var stories = new List<string>(){
             "2021年2月9日 イーロンマスクがリップルを、1,２３４,567円買った",
             "abc令和2年3月8日GameStopがドージコインを売った",
@@ -36,7 +29,7 @@ public class Test
 
         var tm = new Stopwatch();
         tm.Start();
-        IParse st = new SystemTrader();
+        IParse st = new SystemTrader("ja-JP");
         var tasks = new List<Task>();
 
         // parse each story in parallel
@@ -64,32 +57,65 @@ public class Test
 
         // Console.WriteLine("c: {0}", tm.Elapsed);
     }
-    // study how to use Regex to parse date, digit and currency
+
+    /// <summary>
+    /// Class to parse date and currency strings.
+    /// </summary>
     private class SystemTrader : IParse
     {
-        private List<(string, Regex)> regexes;
+        private List<(int, string, Regex)> regexes;
+        private System.Globalization.CultureInfo culture;
         private static ParallelOptions po = new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
-        public SystemTrader()
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public SystemTrader(string locale)
         {
-            regexes = new List<(string, Regex)>(){
-                ("Currency with 円", new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled)),
-                ("Currency with ¥", new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled)),
-                ("Date with 元号", new Regex(@"(昭和|平成|令和)\d*年?\d*月?\d*日?", RegexOptions.Compiled)),
-                // new Regex(@"(\d+年\d+月\d+日|\d+年\d+月|\d+年)", RegexOptions.Compiled),
+            regexes = new List<(int, string, Regex)>(){
+                (1, "Currency with 円", new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled)),
+                (2, "Currency with ¥", new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled)),
+                (3, "Date with 元号", new Regex(@"(昭和|平成|令和)\d*年?\d*月?\d*日?", RegexOptions.Compiled)),
             };
+
+            culture = new System.Globalization.CultureInfo(locale, true);
+            culture.DateTimeFormat.Calendar = new JapaneseCalendar();
         }
+
+        // parse a string using regex.
+        // The given string should be a string representation of date or currency in Japanese.
         public void ParseTweet(string tweet)
         {
             Parallel.ForEach(regexes, po, regex =>
             {
-                (string pattern, Regex re) = regex;
+                (int code, string pattern, Regex re) = regex;
                 MatchCollection matches = re.Matches(tweet);
                 foreach (Match m in matches)
                 {
-                    Console.WriteLine("{0}: {1}", pattern, m.Value);
+                    if (code == 3)
+                    {
+                        Console.WriteLine("{0}: {1}", pattern, ToDate(m.Value));
+                    }
+                    else
+                    {
+                        Console.WriteLine("{0}: {1}", pattern, m.Value);
+                    }
                 }
             });
+        }
+
+        // Convert the Japanese(Wareki) calendar to the Western calendar.
+        // gg represents a Wareki such as 令和
+        private string ToDate(string japaneseDate)
+        {
+            if (DateTime.TryParseExact(japaneseDate, "ggyy年M月d日", culture, DateTimeStyles.AssumeLocal, out DateTime result))
+            {
+                return result.ToLongDateString();
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }
