@@ -23,3 +23,7 @@ Concurrency could be sirial when running on a single thread.
 https://regex101.com/
 
 ## Polymorphism
+
+## i18n - Culture
+
+System.Globalization.CultureInfo

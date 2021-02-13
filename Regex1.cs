@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Globalization;
 
 public class Test
 {
@@ -16,6 +17,13 @@ public class Test
     }
     public static void Main()
     {
+        var culture = new System.Globalization.CultureInfo("ja-JP", true);
+        culture.DateTimeFormat.Calendar = new JapaneseCalendar();
+
+        string target = "令和3年2月12日";
+        DateTime.TryParseExact(target, "ggyy年M月d日", culture, DateTimeStyles.AssumeLocal, out DateTime result);
+        Console.WriteLine(result.ToLongDateString());
+
         var stories = new List<string>(){
             "2021年2月9日 イーロンマスクがリップルを、1,２３４,567円買った",
             "abc令和2年3月8日GameStopがドージコインを売った",
