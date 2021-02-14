@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Globalization;
+using System.Linq;
 
 #nullable enable
 
@@ -65,7 +66,7 @@ public class Test
     /// </summary>
     private class SystemTrader : IParse
     {
-        private List<(int, string, Regex)> regexes;
+        private List<(string, Regex)> regexes;
         private System.Globalization.CultureInfo culture;
         private static ParallelOptions po = new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
@@ -74,10 +75,10 @@ public class Test
         /// </summary>
         public SystemTrader(string locale)
         {
-            regexes = new List<(int, string, Regex)>(){
-                (1, "Currency with 円", new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled)),
-                (2, "Currency with ¥", new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled)),
-                (3, "Date with 元号", new Regex(@"(昭和|平成|令和)\d*年?\d*月?\d*日?", RegexOptions.Compiled)),
+            regexes = new List<(string, Regex)>(){
+                ("Currency with 円", new Regex(@"[\d,兆億百万]+円\d*銭?", RegexOptions.Compiled)),
+                ("Currency with ¥", new Regex(@"¥[\d,\.兆億百万]+", RegexOptions.Compiled)),
+                ("Date with 元号", new Regex(@"(昭和|平成|令和)\d*年?\d*月?\d*日?", RegexOptions.Compiled)),
             };
 
             culture = new System.Globalization.CultureInfo(locale, true);
@@ -88,20 +89,22 @@ public class Test
         // The given string should be a string representation of date or currency in Japanese.
         public void ParseTweet(string tweet)
         {
-            Parallel.ForEach(regexes, po, regex =>
+            var query = regexes.Select((regex, idx) => new { idx, regex }); // LINQ is cool.
+
+            Parallel.ForEach(query, po, row =>
             {
-                (int code, string pattern, Regex re) = regex;
+                (string pattern, Regex re) = row.regex;
                 MatchCollection matches = re.Matches(tweet);
                 foreach (Match m in matches)
                 {
-                    if (code == 3)
+                    if (row.idx == 3)
                     {
                         string? ret = ToDate(japaneseDate: m.Value);
                         Console.WriteLine("{0}: {1}", pattern, ret ?? "parse error");
                     }
                     else
                     {
-                        Console.WriteLine("{0}: {1}", pattern, m.Value);
+                        Console.WriteLine($"{pattern}: {m.Value}");
                     }
                 }
             });
